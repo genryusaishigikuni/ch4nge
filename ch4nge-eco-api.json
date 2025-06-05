@@ -1,0 +1,948 @@
+{
+  "info": {
+    "name": "EcoApp API",
+    "description": "Complete API collection for the EcoApp backend service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "ecoapp-api-collection",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('token', response.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"username\": \"testuser\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('token', response.token);",
+                  "    pm.environment.set('userId', response.user_id.toString());",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('token', response.token);",
+                  "    pm.environment.set('userId', response.user_id.toString());",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "Get User Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get User Friends",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/friends",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "friends"]
+            }
+          }
+        },
+        {
+          "name": "Update User Friends",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"friendIds\": [\"2\", \"3\", \"4\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/friends",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "friends"]
+            }
+          }
+        },
+        {
+          "name": "Upload Profile Picture",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "profilePic",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/profile-pic",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "profile-pic"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Achievements",
+      "item": [
+        {
+          "name": "Get All User Achievements",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/achievements",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "achievements"]
+            }
+          }
+        },
+        {
+          "name": "Get Next Achievement",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/achievements/next",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "achievements", "next"]
+            }
+          }
+        },
+        {
+          "name": "Get Achievement Progress",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/achievements/progress",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "achievements", "progress"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Challenges",
+      "item": [
+        {
+          "name": "Get Mini Challenges",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/mini-challenges",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "mini-challenges"]
+            }
+          }
+        },
+        {
+          "name": "Get Weekly Challenge",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/weekly-challenge",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "weekly-challenge"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Activities",
+      "item": [
+        {
+          "name": "Get Friends Activities",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userIds\": [\"1\", \"2\", \"3\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/activities/friends",
+              "host": ["{{baseUrl}}"],
+              "path": ["activities", "friends"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Actions",
+      "item": [
+        {
+          "name": "Upload Green Action",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"actionType\": \"recycling\",\n  \"payload\": {\n    \"items\": [\"plastic\", \"paper\"],\n    \"quantity\": 5\n  },\n  \"metadata\": {\n    \"location\": \"home\",\n    \"timestamp\": \"2024-01-15T10:30:00Z\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/actions/green",
+              "host": ["{{baseUrl}}"],
+              "path": ["actions", "green"]
+            }
+          }
+        },
+        {
+          "name": "Upload Transportation Action",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"actionType\": \"bicycle\",\n  \"payload\": {\n    \"distance\": 5.2,\n    \"duration\": 25,\n    \"route\": \"home_to_work\"\n  },\n  \"metadata\": {\n    \"isEcoFriendly\": true,\n    \"weather\": \"sunny\",\n    \"timestamp\": \"2024-01-15T08:30:00Z\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/actions/transportation",
+              "host": ["{{baseUrl}}"],
+              "path": ["actions", "transportation"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Posts",
+      "item": [
+        {
+          "name": "Upload Post (JSON)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"title\": \"My eco-friendly journey today! 🌱\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/posts",
+              "host": ["{{baseUrl}}"],
+              "path": ["posts"]
+            }
+          }
+        },
+        {
+          "name": "Upload Post with Image",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "userId",
+                  "value": "{{userId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "title",
+                  "value": "Check out my green action!",
+                  "type": "text"
+                },
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/posts",
+              "host": ["{{baseUrl}}"],
+              "path": ["posts"]
+            }
+          }
+        },
+        {
+          "name": "Get Recent Posts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/posts/recent",
+              "host": ["{{baseUrl}}"],
+              "path": ["posts", "recent"]
+            }
+          }
+        },
+        {
+          "name": "Like Post",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/posts/1/like",
+              "host": ["{{baseUrl}}"],
+              "path": ["posts", "1", "like"]
+            }
+          }
+        },
+        {
+          "name": "Share Post",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/posts/1/share",
+              "host": ["{{baseUrl}}"],
+              "path": ["posts", "1", "share"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Achievements",
+      "item": [
+        {
+          "name": "Get All Achievements (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/achievements",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "achievements"]
+            }
+          }
+        },
+        {
+          "name": "Create Achievement",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Green Warrior\",\n  \"subtitle\": \"Complete 10 green actions\",\n  \"points\": 100,\n  \"threshold\": 10,\n  \"category\": \"environmental\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/achievements",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "achievements"]
+            }
+          }
+        },
+        {
+          "name": "Update Achievement",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Green Warrior - Updated\",\n  \"subtitle\": \"Complete 15 green actions\",\n  \"points\": 150,\n  \"threshold\": 15,\n  \"category\": \"environmental\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/achievements/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "achievements", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Achievement",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/achievements/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "achievements", "1"]
+            }
+          }
+        },
+        {
+          "name": "Assign Achievement to User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 1,\n  \"achievementId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/achievements/assign",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "achievements", "assign"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Mini Challenges",
+      "item": [
+        {
+          "name": "Get All Mini Challenges (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/mini-challenges",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "mini-challenges"]
+            }
+          }
+        },
+        {
+          "name": "Create Mini Challenge",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Water Saver\",\n  \"subtitle\": \"Save water by taking shorter showers\",\n  \"points\": 25,\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/mini-challenges",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "mini-challenges"]
+            }
+          }
+        },
+        {
+          "name": "Update Mini Challenge",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Water Saver Pro\",\n  \"subtitle\": \"Save water by taking shorter showers for a week\",\n  \"points\": 50,\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/mini-challenges/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "mini-challenges", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Mini Challenge",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/mini-challenges/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "mini-challenges", "1"]
+            }
+          }
+        },
+        {
+          "name": "Assign Mini Challenge to User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 1,\n  \"miniChallengeId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/mini-challenges/assign",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "mini-challenges", "assign"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Weekly Challenges",
+      "item": [
+        {
+          "name": "Get All Weekly Challenges (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/weekly-challenges",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "weekly-challenges"]
+            }
+          }
+        },
+        {
+          "name": "Create Weekly Challenge",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Bike to Work Week\",\n  \"subtitle\": \"Use bicycle for commuting 5 times this week\",\n  \"points\": 200,\n  \"targetValue\": 5,\n  \"isActive\": true,\n  \"startDate\": \"2024-01-15T00:00:00Z\",\n  \"endDate\": \"2024-01-21T23:59:59Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/weekly-challenges",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "weekly-challenges"]
+            }
+          }
+        },
+        {
+          "name": "Update Weekly Challenge",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Eco Transport Week\",\n  \"subtitle\": \"Use eco-friendly transport 7 times this week\",\n  \"points\": 300,\n  \"targetValue\": 7,\n  \"isActive\": true,\n  \"startDate\": \"2024-01-15T00:00:00Z\",\n  \"endDate\": \"2024-01-21T23:59:59Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/weekly-challenges/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "weekly-challenges", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Weekly Challenge",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/weekly-challenges/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "weekly-challenges", "1"]
+            }
+          }
+        },
+        {
+          "name": "Assign Weekly Challenge to User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 1,\n  \"weeklyChallengeId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/weekly-challenges/assign",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "weekly-challenges", "assign"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ]
+}
