@@ -6,7 +6,7 @@ import (
 )
 
 func UserToResponse(user models.User) models.UserResponse {
-	var friendIds []string
+	friendIds := make([]string, 0) // Initialize as empty slice, not nil
 	for _, friend := range user.Friends {
 		friendIds = append(friendIds, strconv.Itoa(int(friend.ID)))
 	}
