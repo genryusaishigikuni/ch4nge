@@ -18,7 +18,7 @@ func GetUserFriends(c *gin.Context) {
 		return
 	}
 
-	var friendResponses []models.UserResponse
+	friendResponses := make([]models.UserResponse, 0)
 	for _, friend := range user.Friends {
 		friendResponses = append(friendResponses, utils.UserToResponse(*friend))
 	}
