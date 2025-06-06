@@ -923,7 +923,159 @@
           }
         }
       ]
-    }
+    },
+
+    {
+      "name": "Newly added postman requests",
+      "item": [
+        {
+        "name": "Get User Actions",
+        "request": {
+          "method": "GET",
+          "header": [
+            {
+              "key": "Authorization",
+              "value": "Bearer {{token}}"
+            }
+          ],
+          "url": {
+            "raw": "{{baseUrl}}/users/{{userId}}/actions?limit=50&offset=0&type=",
+            "host": ["{{baseUrl}}"],
+            "path": ["users", "{{userId}}", "actions"],
+            "query": [
+              {
+                "key": "limit",
+                "value": "50",
+                "description": "Maximum number of actions to return"
+              },
+              {
+                "key": "offset",
+                "value": "0",
+                "description": "Number of actions to skip"
+              },
+              {
+                "key": "type",
+                "value": "",
+                "description": "Filter by action type (optional)"
+              }
+            ]
+          }
+        }
+      },
+        {
+          "name": "Get User Action Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/actions/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "actions", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Get User Activities",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/activities?limit=20&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "activities"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Maximum number of activities to return"
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Number of activities to skip"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get User Posts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/posts?limit=20&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "posts"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Maximum number of posts to return"
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Number of posts to skip"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get User Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/dashboard",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "dashboard"]
+            }
+          }
+        },
+        {
+          "name": "Get Completed Challenges",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/challenges/completed",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "challenges", "completed"]
+            }
+          }
+        }
+
+
+      ]}
+
+
   ],
   "event": [
     {

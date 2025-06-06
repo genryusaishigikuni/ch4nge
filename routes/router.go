@@ -32,6 +32,13 @@ func SetupRoutes(r *gin.Engine) {
 			users.PUT("/:userId/friends", User.UpdateUserFriends)
 			users.POST("/:userId/profile-pic", User.UploadProfilePicture)
 
+			// NEW: User's own content endpoints
+			users.GET("/:userId/actions", User.GetUserActions)           // User's action history
+			users.GET("/:userId/actions/stats", User.GetUserActionStats) // Action statistics
+			users.GET("/:userId/activities", Activity.GetUserActivities) // User's own activities
+			users.GET("/:userId/posts", Post.GetUserPosts)               // User's own posts
+			users.GET("/:userId/dashboard", User.GetUserDashboard)       // Overall dashboard
+
 			// Achievement routes
 			users.GET("/:userId/achievements", Achievement.GetAllAchievements)
 			users.GET("/:userId/achievements/next", Achievement.GetNextAchievement)
@@ -40,6 +47,8 @@ func SetupRoutes(r *gin.Engine) {
 			// Challenge routes
 			users.GET("/:userId/mini-challenges", MiniChallenges.GetMiniChallenges)
 			users.GET("/:userId/weekly-challenge", MiniChallenges.GetWeeklyChallenge)
+			users.GET("/:userId/challenges/completed", MiniChallenges.GetCompletedChallenges) // NEW: Completed challenges
+
 		}
 
 		// Activity routes
