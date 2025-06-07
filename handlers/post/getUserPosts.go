@@ -56,8 +56,9 @@ func GetUserPosts(c *gin.Context) {
 		}
 
 		// Get requesting user ID from auth context (optional)
+		// FIXED: Changed from "userID" to "user_id" to match what AuthMiddleware sets
 		var requestingUserID uint
-		if userIDInterface, exists := c.Get("userID"); exists {
+		if userIDInterface, exists := c.Get("user_id"); exists {
 			if id, ok := userIDInterface.(uint); ok {
 				requestingUserID = id
 			}

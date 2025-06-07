@@ -12,7 +12,8 @@ func LikePost(c *gin.Context) {
 	postID := c.Param("postId")
 
 	// Get user ID from JWT token (set by auth middleware)
-	userIDInterface, exists := c.Get("userID")
+	// FIXED: Changed from "userID" to "user_id" to match what AuthMiddleware sets
+	userIDInterface, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
