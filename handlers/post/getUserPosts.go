@@ -26,9 +26,7 @@ func GetUserPosts(c *gin.Context) {
 
 	var posts []models.Post
 	if err := database.DB.Where("user_id = ?", userId).
-		Preload("User").       // Load user information
-		Preload("PostLikes").  // Load likes
-		Preload("PostShares"). // Load shares
+		Preload("User"). // Load user information
 		Order("created_at DESC").
 		Limit(limitInt).
 		Offset(offsetInt).
@@ -41,20 +39,35 @@ func GetUserPosts(c *gin.Context) {
 	var totalCount int64
 	database.DB.Model(&models.Post{}).Where("user_id = ?", userId).Count(&totalCount)
 
-	// Calculate engagement stats for each post
+	// Enhanced post response with engagement stats and user interaction info
 	type PostWithStats struct {
 		models.Post
-		LikesCount  int `json:"likes_count"`
-		SharesCount int `json:"shares_count"`
+		LikesCount    int  `json:"likes_count"`
+		SharesCount   int  `json:"shares_count"`
+		IsLikedByUser bool `json:"is_liked_by_user,omitempty"` // Optional: if you want to check for requesting user
 	}
 
 	var postsWithStats []PostWithStats
 	for _, post := range posts {
 		postStats := PostWithStats{
 			Post:        post,
-			LikesCount:  post.LikeNumber,
-			SharesCount: post.SharesNumber,
+			LikesCount:  len(post.LikedBy),
+			SharesCount: len(post.SharedBy),
 		}
+
+		// Get requesting user ID from auth context (optional)
+		var requestingUserID uint
+		if userIDInterface, exists := c.Get("userID"); exists {
+			if id, ok := userIDInterface.(uint); ok {
+				requestingUserID = id
+			}
+		}
+
+		// Check if the requesting user has liked this post
+		if requestingUserID > 0 {
+			postStats.IsLikedByUser = post.HasLiked(requestingUserID)
+		}
+
 		postsWithStats = append(postsWithStats, postStats)
 	}
 

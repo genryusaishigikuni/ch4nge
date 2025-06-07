@@ -48,3 +48,22 @@ type WeeklyChallengeResponse struct {
 	TotalValue        int    `json:"totalValue"`
 	Points            int    `json:"points"`
 }
+
+type PostLikeResponse struct {
+	Post    Post   `json:"post"`
+	IsLiked bool   `json:"is_liked"`
+	Message string `json:"message"`
+}
+
+type PostEngagementResponse struct {
+	PostID      uint   `json:"post_id"`
+	LikesCount  int    `json:"likes_count"`
+	SharesCount int    `json:"shares_count"`
+	LikedBy     []User `json:"liked_by,omitempty"`
+}
+
+type UserLikeStatusResponse struct {
+	PostID  uint `json:"post_id"`
+	UserID  uint `json:"user_id"`
+	IsLiked bool `json:"is_liked"`
+}

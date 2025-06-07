@@ -2,52 +2,59 @@ package post
 
 import (
 	db "github.com/genryusaishigikuni/ch4nge/database"
-
 	"github.com/genryusaishigikuni/ch4nge/models"
 	"github.com/genryusaishigikuni/ch4nge/utils"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 	"net/http"
-	"strconv"
 )
 
 func LikePost(c *gin.Context) {
 	postID := c.Param("postId")
 
-	var req models.LikePostRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	// Get user ID from JWT token (set by auth middleware)
+	userIDInterface, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
 	}
 
-	userID, err := strconv.Atoi(req.UserID)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+	userID, ok := userIDInterface.(uint)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID in token"})
 		return
 	}
 
-	// Check if already liked
-	var existingLike models.PostLike
-	if err := db.DB.Where("post_id = ? AND user_id = ?", postID, userID).First(&existingLike).Error; err == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "Post already liked"})
-		return
-	}
-
-	// Create like
-	like := models.PostLike{
-		PostID: utils.ParseUint(postID),
-		UserID: uint(userID),
-	}
-	if err := db.DB.Create(&like).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to like post"})
-		return
-	}
-
-	// Update like count
-	db.DB.Model(&models.Post{}).Where("id = ?", postID).Update("like_number", gorm.Expr("like_number + 1"))
-
-	// Return updated post
+	// Get the post
 	var post models.Post
-	db.DB.First(&post, postID)
-	c.JSON(http.StatusOK, post)
+	if err := db.DB.First(&post, utils.ParseUint(postID)).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Post not found"})
+		return
+	}
+
+	// Toggle like status
+	isLiked := post.ToggleLike(userID)
+
+	// Update the post in database
+	if err := db.DB.Save(&post).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update post"})
+		return
+	}
+
+	// Load user information for response
+	db.DB.Preload("User").First(&post, post.ID)
+
+	response := gin.H{
+		"post":    post,
+		"isLiked": isLiked,
+		"message": getMessage(isLiked),
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+func getMessage(isLiked bool) string {
+	if isLiked {
+		return "Post liked successfully"
+	}
+	return "Post unliked successfully"
 }
