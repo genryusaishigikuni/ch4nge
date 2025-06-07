@@ -11,8 +11,8 @@ type User struct {
 	Streak        int       `json:"streak" gorm:"default:0"`
 	Points        int       `json:"points" gorm:"default:0"`
 	GHGIndex      float64   `json:"ghgIndex" gorm:"default:0.0"`
-	Latitude      float64   `json:"-"`
-	Longitude     float64   `json:"-"`
+	Latitude      float64   `json:"-" gorm:"default:40.409264"`
+	Longitude     float64   `json:"-" gorm:"default:49.867092"`
 	IsAdmin       bool      `json:"-" gorm:"default:false"`
 	CreatedAt     time.Time `json:"-"`
 	UpdatedAt     time.Time `json:"-"`

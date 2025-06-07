@@ -39,10 +39,32 @@ func UploadTransportationAction(c *gin.Context) {
 	// Update user points
 	db.DB.Model(&models.User{}).Where("id = ?", userID).Update("points", gorm.Expr("points + ?", action.Points))
 
+	// Update user location if provided in action payload
+	if locationArray, ok := req.Payload["location"].([]interface{}); ok && len(locationArray) == 2 {
+		if latitude, ok := locationArray[0].(float64); ok {
+			if longitude, ok := locationArray[1].(float64); ok {
+				db.DB.Model(&models.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
+					"latitude":  latitude,
+					"longitude": longitude,
+				})
+			}
+		}
+	}
+
+	// Get action title from payload
+	actionTitle := "Used transportation"
+	if option, ok := req.Payload["option"].(string); ok && option != "" {
+		if vehicle, ok := req.Payload["vehicle"].(string); ok && vehicle != "" {
+			actionTitle = formatTransportationActionTitle(option, vehicle)
+		} else {
+			actionTitle = option
+		}
+	}
+
 	// Create activity
 	activity := models.Activity{
 		UserID: userID.(uint),
-		Title:  "Used transportation",
+		Title:  actionTitle,
 		Value:  points,
 	}
 	db.DB.Create(&activity)
