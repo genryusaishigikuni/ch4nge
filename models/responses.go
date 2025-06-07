@@ -40,13 +40,13 @@ type MiniChallengeResponse struct {
 }
 
 type WeeklyChallengeResponse struct {
-	WeeklyChallengeID uint   `json:"weeklyChallengeId"`
-	UserID            uint   `json:"userId"`
-	Title             string `json:"title"`
-	Subtitle          string `json:"subtitle"`
-	CurrentValue      int    `json:"currentValue"`
-	TotalValue        int    `json:"totalValue"`
-	Points            int    `json:"points"`
+	WeeklyChallengeID uint    `json:"weeklyChallengeId"`
+	UserID            uint    `json:"userId"`
+	Title             string  `json:"title"`
+	Subtitle          string  `json:"subtitle"`
+	CurrentValue      float64 `json:"currentValue"` // Изменено с int на float64
+	TotalValue        float64 `json:"totalValue"`   // Изменено с int на float64
+	Points            int     `json:"points"`
 }
 
 type PostLikeResponse struct {
