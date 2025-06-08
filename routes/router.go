@@ -12,6 +12,10 @@ import Post "github.com/genryusaishigikuni/ch4nge/handlers/post"
 import Admin "github.com/genryusaishigikuni/ch4nge/handlers/admin"
 
 func SetupRoutes(r *gin.Engine) {
+
+	// Serve static files (uploaded images)
+	r.Static("/uploads", "./uploads")
+
 	// Public routes
 	auth := r.Group("/auth")
 	{

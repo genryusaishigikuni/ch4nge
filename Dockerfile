@@ -34,8 +34,14 @@ WORKDIR /root/
 # Copy the binary from builder stage
 COPY --from=builder /app/main .
 
+
+
+RUN mkdir -p uploads/profiles
+
 # Change ownership to non-root user
 RUN chown appuser:appuser main
+
+RUN chmod -R 777 uploads
 
 # Switch to non-root user
 USER appuser
