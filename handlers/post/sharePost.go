@@ -1,15 +1,13 @@
 package post
 
 import (
-	"net/http"
-	"strconv"
-	"time"
-
 	db "github.com/genryusaishigikuni/ch4nge/database"
 	"github.com/genryusaishigikuni/ch4nge/models"
 	"github.com/genryusaishigikuni/ch4nge/utils"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
+	"net/http"
+	"strconv"
+	"time"
 )
 
 func SharePost(c *gin.Context) {
@@ -27,7 +25,7 @@ func SharePost(c *gin.Context) {
 		return
 	}
 
-	// Create share
+	// Create a share record
 	share := models.PostShare{
 		PostID:   utils.ParseUint(postID),
 		UserID:   uint(userID),
@@ -38,15 +36,16 @@ func SharePost(c *gin.Context) {
 		return
 	}
 
-	// Increment share count
-	db.DB.Model(&models.Post{}).
-		Where("id = ?", postID).
-		Update("shares_number", gorm.Expr("shares_number + 1"))
-
-	// Return updated post
+	// Update SharedBy array
 	var post models.Post
 	if err := db.DB.First(&post, postID).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch post"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Post not found"})
+		return
+	}
+
+	post.SharedBy = append(post.SharedBy, uint(userID))
+	if err := db.DB.Save(&post).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update post share list"})
 		return
 	}
 
