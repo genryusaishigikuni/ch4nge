@@ -9,10 +9,20 @@ import (
 )
 
 func CreateWeeklyChallenge(c *gin.Context) {
-	var challenge models.WeeklyChallenge
-	if err := c.ShouldBindJSON(&challenge); err != nil {
+	var req models.WeeklyChallengeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	challenge := models.WeeklyChallenge{
+		Title:       req.Title,
+		Subtitle:    req.Subtitle,
+		Points:      req.Points,
+		TargetValue: req.TargetValue, // Используем значение из запроса
+		IsActive:    req.IsActive,
+		StartDate:   req.StartDate,
+		EndDate:     req.EndDate,
 	}
 
 	// Create the weekly challenge
@@ -40,6 +50,7 @@ func assignWeeklyChallengeToAllUsers(challengeID uint) error {
 		userChallenge := models.UserWeeklyChallenge{
 			UserID:            user.ID,
 			WeeklyChallengeID: challengeID,
+			CurrentValue:      0.0, // Начальное значение 0
 			AssignedAt:        time.Now(),
 		}
 		// Use FirstOrCreate to avoid duplicates

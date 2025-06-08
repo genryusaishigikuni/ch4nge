@@ -9,11 +9,7 @@ import (
 )
 
 func AssignWeeklyChallengeToUser(c *gin.Context) {
-	var req struct {
-		UserID            uint `json:"userId" binding:"required"`
-		WeeklyChallengeID uint `json:"weeklyChallengeId" binding:"required"`
-	}
-
+	var req models.UserWeeklyChallengeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -22,6 +18,7 @@ func AssignWeeklyChallengeToUser(c *gin.Context) {
 	userChallenge := models.UserWeeklyChallenge{
 		UserID:            req.UserID,
 		WeeklyChallengeID: req.WeeklyChallengeID,
+		CurrentValue:      req.CurrentValue, // Используем значение из запроса
 		AssignedAt:        time.Now(),
 	}
 

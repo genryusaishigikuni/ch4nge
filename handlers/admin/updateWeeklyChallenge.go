@@ -17,10 +17,20 @@ func UpdateWeeklyChallenge(c *gin.Context) {
 		return
 	}
 
-	if err := c.ShouldBindJSON(&challenge); err != nil {
+	var req models.WeeklyChallengeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Обновляем поля
+	challenge.Title = req.Title
+	challenge.Subtitle = req.Subtitle
+	challenge.Points = req.Points
+	challenge.TargetValue = req.TargetValue // Используем значение из запроса
+	challenge.IsActive = req.IsActive
+	challenge.StartDate = req.StartDate
+	challenge.EndDate = req.EndDate
 
 	if err := db.DB.Save(&challenge).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update weekly challenge"})

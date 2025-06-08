@@ -47,7 +47,6 @@ services:
         condition: service_healthy
     volumes:
       - .:/app  # For development hot reload (optional)
-      - ./uploads:/app/uploads  # Persist uploaded files
     networks:
       - ch4nge_network
     restart: unless-stopped
@@ -75,8 +74,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    volumes:
-      - ./uploads:/app/uploads  # Persist uploaded files
     networks:
       - ch4nge_network
     restart: unless-stopped

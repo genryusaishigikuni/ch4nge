@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 type LoginRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
@@ -42,4 +44,24 @@ type LikePostRequest struct {
 
 type SharePostRequest struct {
 	UserID string `json:"userId" binding:"required"`
+}
+
+type UserWeeklyChallengeRequest struct {
+	UserID            uint    `json:"userId" binding:"required"`
+	WeeklyChallengeID uint    `json:"weeklyChallengeId" binding:"required"`
+	CurrentValue      float64 `json:"currentValue"`
+}
+
+type WeeklyChallengeRequest struct {
+	Title       string    `json:"title" binding:"required"`
+	Subtitle    string    `json:"subtitle"`
+	Points      int       `json:"points"`
+	TargetValue float64   `json:"targetValue" binding:"required"`
+	IsActive    bool      `json:"isActive"`
+	StartDate   time.Time `json:"startDate"`
+	EndDate     time.Time `json:"endDate"`
+}
+
+type UpdateProgressRequest struct {
+	CurrentValue float64 `json:"currentValue" binding:"required"`
 }

@@ -52,7 +52,7 @@ func SetupRoutes(r *gin.Engine) {
 			users.GET("/:userId/mini-challenges", MiniChallenges.GetMiniChallenges)
 			users.GET("/:userId/weekly-challenge", MiniChallenges.GetWeeklyChallenge)
 			users.GET("/:userId/challenges/completed", MiniChallenges.GetCompletedChallenges) // NEW: Completed challenges
-
+			users.PUT("/:userId/weekly-challenge/:challengeId/progress", MiniChallenges.UpdateUserWeeklyChallengeProgress)
 		}
 
 		// Activity routes
