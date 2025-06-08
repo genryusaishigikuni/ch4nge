@@ -19,13 +19,12 @@ func CreateWeeklyChallenge(c *gin.Context) {
 		Title:       req.Title,
 		Subtitle:    req.Subtitle,
 		Points:      req.Points,
-		TargetValue: req.TargetValue, // Используем значение из запроса
+		TargetValue: req.TargetValue,
 		IsActive:    req.IsActive,
 		StartDate:   req.StartDate,
 		EndDate:     req.EndDate,
 	}
 
-	// Create the weekly challenge
 	if err := db.DB.Create(&challenge).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create weekly challenge"})
 		return
@@ -50,10 +49,9 @@ func assignWeeklyChallengeToAllUsers(challengeID uint) error {
 		userChallenge := models.UserWeeklyChallenge{
 			UserID:            user.ID,
 			WeeklyChallengeID: challengeID,
-			CurrentValue:      0.0, // Начальное значение 0
+			CurrentValue:      0.0,
 			AssignedAt:        time.Now(),
 		}
-		// Use FirstOrCreate to avoid duplicates
 		if err := db.DB.FirstOrCreate(&userChallenge, models.UserWeeklyChallenge{
 			UserID:            user.ID,
 			WeeklyChallengeID: challengeID,

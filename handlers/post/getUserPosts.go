@@ -17,7 +17,6 @@ func GetUserPosts(c *gin.Context) {
 		return
 	}
 
-	// Get query parameters for pagination
 	limit := c.DefaultQuery("limit", "20")
 	offset := c.DefaultQuery("offset", "0")
 
@@ -35,16 +34,14 @@ func GetUserPosts(c *gin.Context) {
 		return
 	}
 
-	// Get total count for pagination
 	var totalCount int64
 	database.DB.Model(&models.Post{}).Where("user_id = ?", userId).Count(&totalCount)
 
-	// Enhanced post response with engagement stats and user interaction info
 	type PostWithStats struct {
 		models.Post
 		LikesCount    int  `json:"likes_count"`
 		SharesCount   int  `json:"shares_count"`
-		IsLikedByUser bool `json:"is_liked_by_user,omitempty"` // Optional: if you want to check for requesting user
+		IsLikedByUser bool `json:"is_liked_by_user,omitempty"`
 	}
 
 	var postsWithStats []PostWithStats
@@ -55,8 +52,6 @@ func GetUserPosts(c *gin.Context) {
 			SharesCount: len(post.SharedBy),
 		}
 
-		// Get requesting user ID from auth context (optional)
-		// FIXED: Changed from "userID" to "user_id" to match what AuthMiddleware sets
 		var requestingUserID uint
 		if userIDInterface, exists := c.Get("user_id"); exists {
 			if id, ok := userIDInterface.(uint); ok {
@@ -64,7 +59,6 @@ func GetUserPosts(c *gin.Context) {
 			}
 		}
 
-		// Check if the requesting user has liked this post
 		if requestingUserID > 0 {
 			postStats.IsLikedByUser = post.HasLiked(requestingUserID)
 		}

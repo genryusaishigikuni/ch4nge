@@ -20,7 +20,6 @@ func CreateAchievement(c *gin.Context) {
 		return
 	}
 
-	// Assign to all existing users
 	if err := assignAchievementToAllUsers(achievement.ID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Achievement created but failed to assign to all users"})
 		return
@@ -40,7 +39,6 @@ func assignAchievementToAllUsers(achievementID uint) error {
 			UserID:        user.ID,
 			AchievementID: achievementID,
 		}
-		// Use FirstOrCreate to avoid duplicates
 		if err := db.DB.FirstOrCreate(&userAchievement, models.UserAchievement{
 			UserID:        user.ID,
 			AchievementID: achievementID,

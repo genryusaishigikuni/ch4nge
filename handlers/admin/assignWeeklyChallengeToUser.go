@@ -18,7 +18,7 @@ func AssignWeeklyChallengeToUser(c *gin.Context) {
 	userChallenge := models.UserWeeklyChallenge{
 		UserID:            req.UserID,
 		WeeklyChallengeID: req.WeeklyChallengeID,
-		CurrentValue:      req.CurrentValue, // Используем значение из запроса
+		CurrentValue:      req.CurrentValue,
 		AssignedAt:        time.Now(),
 	}
 

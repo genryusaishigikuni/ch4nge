@@ -84,7 +84,6 @@ func createAdminUser() {
 	var count int64
 	DB.Model(&models.User{}).Where("is_admin = ?", true).Count(&count)
 	if count == 0 {
-		// Use environment variable for admin password in production
 		adminPassword := os.Getenv("ADMIN_PASSWORD")
 		if adminPassword == "" {
 			adminPassword = "admin123"

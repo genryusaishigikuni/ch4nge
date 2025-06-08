@@ -25,7 +25,6 @@ func SharePost(c *gin.Context) {
 		return
 	}
 
-	// Create a share record
 	share := models.PostShare{
 		PostID:   utils.ParseUint(postID),
 		UserID:   uint(userID),
@@ -36,7 +35,6 @@ func SharePost(c *gin.Context) {
 		return
 	}
 
-	// Update SharedBy array
 	var post models.Post
 	if err := db.DB.First(&post, postID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Post not found"})

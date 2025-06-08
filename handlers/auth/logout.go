@@ -6,6 +6,5 @@ import (
 )
 
 func Logout(c *gin.Context) {
-	// In a real implementation, you might want to blacklist the token
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
 }

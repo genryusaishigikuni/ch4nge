@@ -14,7 +14,6 @@ import (
 func UploadPost(c *gin.Context) {
 	var req models.PostRequest
 
-	// Handle both JSON and form data
 	contentType := c.GetHeader("Content-Type")
 	if strings.Contains(contentType, "multipart/form-data") {
 		if err := c.ShouldBind(&req); err != nil {
@@ -39,7 +38,6 @@ func UploadPost(c *gin.Context) {
 		Title:  req.Title,
 	}
 
-	// Handle image upload if present
 	if file, err := c.FormFile("image"); err == nil {
 		// In a real implementation, save to cloud storage
 		imageURL := fmt.Sprintf("https://example.com/posts/%d_%s", userID, file.Filename)

@@ -23,11 +23,10 @@ func UpdateWeeklyChallenge(c *gin.Context) {
 		return
 	}
 
-	// Обновляем поля
 	challenge.Title = req.Title
 	challenge.Subtitle = req.Subtitle
 	challenge.Points = req.Points
-	challenge.TargetValue = req.TargetValue // Используем значение из запроса
+	challenge.TargetValue = req.TargetValue
 	challenge.IsActive = req.IsActive
 	challenge.StartDate = req.StartDate
 	challenge.EndDate = req.EndDate

@@ -17,10 +17,9 @@ func GetUserActions(c *gin.Context) {
 		return
 	}
 
-	// Get query parameters for pagination and filtering
 	limit := c.DefaultQuery("limit", "50")
 	offset := c.DefaultQuery("offset", "0")
-	actionType := c.Query("type") // Optional filter by action type
+	actionType := c.Query("type")
 
 	limitInt, _ := strconv.Atoi(limit)
 	offsetInt, _ := strconv.Atoi(offset)
@@ -31,7 +30,6 @@ func GetUserActions(c *gin.Context) {
 		Limit(limitInt).
 		Offset(offsetInt)
 
-	// Apply type filter if provided
 	if actionType != "" {
 		query = query.Where("action_type = ?", actionType)
 	}
@@ -41,7 +39,6 @@ func GetUserActions(c *gin.Context) {
 		return
 	}
 
-	// Get total count for pagination
 	var totalCount int64
 	countQuery := database.DB.Model(&models.Action{}).Where("user_id = ?", userId)
 	if actionType != "" {

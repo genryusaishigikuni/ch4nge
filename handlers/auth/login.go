@@ -18,20 +18,17 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Find user
 	var user models.User
 	if err := db.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
-	// Check password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
-	// Generate token
 	token, err := jwt.GenerateToken(user.ID, user.Email, user.IsAdmin)
 	if err != nil {
 		log.Printf("DEBUG LOGIN: Error generating token: %v", err)
@@ -43,7 +40,6 @@ func Login(c *gin.Context) {
 	log.Printf("DEBUG LOGIN: Token length: %d", len(token))
 	log.Printf("DEBUG LOGIN: First 50 chars: %s", token[:minimum(50, len(token))])
 
-	// Test the token immediately after generation
 	claims, validateErr := jwt.ValidateToken(token)
 	if validateErr != nil {
 		log.Printf("DEBUG LOGIN: Token validation failed immediately after generation: %v", validateErr)

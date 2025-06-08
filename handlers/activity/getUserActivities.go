@@ -17,7 +17,6 @@ func GetUserActivities(c *gin.Context) {
 		return
 	}
 
-	// Get query parameters for pagination
 	limit := c.DefaultQuery("limit", "20")
 	offset := c.DefaultQuery("offset", "0")
 
@@ -34,7 +33,6 @@ func GetUserActivities(c *gin.Context) {
 		return
 	}
 
-	// Get total count for pagination
 	var totalCount int64
 	database.DB.Model(&models.Activity{}).Where("user_id = ?", userId).Count(&totalCount)
 

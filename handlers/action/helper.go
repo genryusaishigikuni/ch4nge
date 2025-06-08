@@ -34,16 +34,3 @@ func formatGreenActionTitle(option string) string {
 		return titleCaser.String(strings.ReplaceAll(option, "_", " "))
 	}
 }
-
-func formatTransportationActionTitle(option, vehicle string) string {
-	switch strings.ToLower(option) {
-	case "active commute":
-		return "Commuted by " + vehicle
-	case "private vehicle":
-		return "Used " + vehicle
-	case "public transport":
-		return "Took " + vehicle
-	default:
-		return option + " - " + vehicle
-	}
-}

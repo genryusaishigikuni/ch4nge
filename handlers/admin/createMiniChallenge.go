@@ -15,13 +15,11 @@ func CreateMiniChallenge(c *gin.Context) {
 		return
 	}
 
-	// Create the mini challenge
 	if err := db.DB.Create(&challenge).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create mini challenge"})
 		return
 	}
 
-	// Assign to all existing users
 	if err := assignMiniChallengeToAllUsers(challenge.ID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Mini challenge created but failed to assign to all users"})
 		return
@@ -42,7 +40,6 @@ func assignMiniChallengeToAllUsers(challengeID uint) error {
 			MiniChallengeID: challengeID,
 			AssignedAt:      time.Now(),
 		}
-		// Use FirstOrCreate to avoid duplicates
 		if err := db.DB.FirstOrCreate(&userChallenge, models.UserMiniChallenge{
 			UserID:          user.ID,
 			MiniChallengeID: challengeID,

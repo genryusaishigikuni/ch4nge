@@ -1,46 +1,82 @@
 package action
 
 import (
-	"net/http"
+	"fmt"
+	"math"
+	"time"
 
-	"github.com/genryusaishigikuni/ch4nge/database"
+	db "github.com/genryusaishigikuni/ch4nge/database"
 	"github.com/genryusaishigikuni/ch4nge/models"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"net/http"
 )
 
-func CalculateGHGIndex(distance, fuelConsumption float64, passengers int) float64 {
-	if passengers <= 0 {
-		passengers = 1
-	}
-	co2PerKm := (fuelConsumption / 100.0) * 2.3
-	totalCO2 := co2PerKm * distance
-	return totalCO2 / float64(passengers)
-}
-
-func CalculateGHGPoints(distance float64, fuelConsumption float64, passengers int) int {
+// CalculateTransportationImpact Улучшенная функция расчета GHG и поинтов
+func CalculateTransportationImpact(distance, fuelConsumption float64, passengers int, transportType string) (points int, ghg float64, isEcoFriendly bool) {
 	if passengers <= 0 {
 		passengers = 1
 	}
 
-	co2PerKm := (fuelConsumption / 100.0) * 2.3
-	totalCO2 := co2PerKm * distance
-	co2PerPerson := totalCO2 / float64(passengers)
+	// Базовый расчет CO2 (кг CO2 на км)
+	var co2PerKm float64
 
-	switch {
-	case co2PerPerson > 40:
-		return -10
-	case co2PerPerson > 25:
-		return -5
-	case co2PerPerson > 15:
-		return 0
-	case co2PerPerson > 5:
-		return 5
+	switch transportType {
+	case "bicycle", "walking", "scooter":
+		co2PerKm = 0 // Экологичный транспорт
+		isEcoFriendly = true
+	case "public_transport", "bus", "metro", "train":
+		co2PerKm = 0.05 // Общественный транспорт
+		isEcoFriendly = true
+	case "electric_car":
+		co2PerKm = 0.1 // Электромобиль
+		isEcoFriendly = true
+	case "car", "private_vehicle":
+		co2PerKm = (fuelConsumption / 100.0) * 2.3 // Личный автомобиль
+		isEcoFriendly = false
+	case "motorcycle":
+		co2PerKm = (fuelConsumption / 100.0) * 2.1
+		isEcoFriendly = false
 	default:
-		return 10
+		co2PerKm = (fuelConsumption / 100.0) * 2.3
+		isEcoFriendly = false
 	}
+
+	totalCO2 := co2PerKm * distance
+	ghg = totalCO2 / float64(passengers)
+
+	// Расчет поинтов на основе экологичности
+	if isEcoFriendly {
+		// Позитивные поинты за экологичный транспорт
+		basePoints := int(distance * 0.5) // 0.5 поинта за км
+		if basePoints > 50 {
+			basePoints = 50
+		}
+		if basePoints < 5 {
+			basePoints = 5
+		}
+		points = basePoints
+	} else {
+		// Негативные поинты за неэкологичный транспорт
+		co2PerPerson := ghg
+		switch {
+		case co2PerPerson > 50:
+			points = -15 // Очень плохо
+		case co2PerPerson > 30:
+			points = -10 // Плохо
+		case co2PerPerson > 15:
+			points = -5 // Не очень
+		case co2PerPerson > 5:
+			points = 0 // Нейтрально
+		default:
+			points = 2 // Немного хорошо
+		}
+	}
+
+	return points, ghg, isEcoFriendly
 }
 
+// UploadTransportationAction Улучшенная функция загрузки транспортного действия
 func UploadTransportationAction(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 
@@ -53,9 +89,10 @@ func UploadTransportationAction(c *gin.Context) {
 	distance, _ := req.Payload["distance"].(float64)
 	fuelConsumption, _ := req.Payload["fuelConsumption"].(float64)
 	passengers, _ := req.Payload["passengers"].(float64)
+	transportType, _ := req.Payload["transportType"].(string)
+	vehicle, _ := req.Payload["vehicle"].(string)
 
-	points := CalculateGHGPoints(distance, fuelConsumption, int(passengers))
-	ghg := CalculateGHGIndex(distance, fuelConsumption, int(passengers))
+	points, ghg, isEcoFriendly := CalculateTransportationImpact(distance, fuelConsumption, int(passengers), transportType)
 
 	action := models.Action{
 		UserID:     userID.(uint),
@@ -65,19 +102,20 @@ func UploadTransportationAction(c *gin.Context) {
 		Points:     points,
 	}
 
-	if err := database.DB.Create(&action).Error; err != nil {
+	if err := db.DB.Create(&action).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload transportation action"})
 		return
 	}
 
-	database.DB.Model(&models.User{}).Where("id = ?", userID).Update("points", gorm.Expr("points + ?", action.Points))
-	database.DB.Model(&models.User{}).Where("id = ?", userID).Update("ghg_index", gorm.Expr("ghg_index + ?", ghg))
+	// Обновляем поинты и GHG индекс пользователя
+	db.DB.Model(&models.User{}).Where("id = ?", userID).Update("points", gorm.Expr("points + ?", points))
+	db.DB.Model(&models.User{}).Where("id = ?", userID).Update("ghg_index", gorm.Expr("ghg_index + ?", ghg))
 
-	// Optional: update user location
+	// Обновляем локацию пользователя если предоставлена
 	if locationArray, ok := req.Payload["location"].([]interface{}); ok && len(locationArray) == 2 {
 		if latitude, ok := locationArray[0].(float64); ok {
 			if longitude, ok := locationArray[1].(float64); ok {
-				database.DB.Model(&models.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
+				db.DB.Model(&models.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
 					"latitude":  latitude,
 					"longitude": longitude,
 				})
@@ -85,21 +123,254 @@ func UploadTransportationAction(c *gin.Context) {
 		}
 	}
 
-	actionTitle := "Used transportation"
-	if option, ok := req.Payload["option"].(string); ok && option != "" {
-		if vehicle, ok := req.Payload["vehicle"].(string); ok && vehicle != "" {
-			actionTitle = formatTransportationActionTitle(option, vehicle)
-		} else {
-			actionTitle = option
-		}
-	}
+	// Форматируем заголовок активности
+	actionTitle := formatTransportationActionTitle(transportType, vehicle, distance, isEcoFriendly)
 
+	// Создаем активность
 	activity := models.Activity{
 		UserID: userID.(uint),
 		Title:  actionTitle,
 		Value:  points,
 	}
-	database.DB.Create(&activity)
+	db.DB.Create(&activity)
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Transportation action uploaded successfully."})
+	// Проверяем достижения и челленджи
+	go checkAchievementsAndChallenges(userID.(uint), "transportation", distance, float64(points), isEcoFriendly)
+
+	response := gin.H{
+		"message":      "Transportation action uploaded successfully",
+		"points":       points,
+		"ghg_impact":   ghg,
+		"eco_friendly": isEcoFriendly,
+	}
+
+	c.JSON(http.StatusCreated, response)
+}
+
+// UploadGreenAction Улучшенная функция загрузки зеленого действия
+func UploadGreenAction(c *gin.Context) {
+	userID, _ := c.Get("user_id")
+
+	var req models.GreenActionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Расчет поинтов на основе типа зеленого действия
+	points := calculateGreenActionPoints(req.Payload)
+
+	action := models.Action{
+		UserID:     userID.(uint),
+		ActionType: req.ActionType,
+		Payload:    req.Payload,
+		Metadata:   req.Metadata,
+		Points:     points,
+	}
+
+	if err := db.DB.Create(&action).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload green action"})
+		return
+	}
+
+	// Обновляем поинты пользователя
+	db.DB.Model(&models.User{}).Where("id = ?", userID).Update("points", gorm.Expr("points + ?", points))
+
+	// Обновляем локацию пользователя если предоставлена
+	if locationArray, ok := req.Payload["location"].([]interface{}); ok && len(locationArray) == 2 {
+		if latitude, ok := locationArray[0].(float64); ok {
+			if longitude, ok := locationArray[1].(float64); ok {
+				db.DB.Model(&models.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
+					"latitude":  latitude,
+					"longitude": longitude,
+				})
+			}
+		}
+	}
+
+	// Получаем заголовок действия
+	option, _ := req.Payload["option"].(string)
+	actionTitle := formatGreenActionTitle(option)
+
+	// Создаем активность
+	activity := models.Activity{
+		UserID: userID.(uint),
+		Title:  actionTitle,
+		Value:  points,
+	}
+	db.DB.Create(&activity)
+
+	// Проверяем достижения и челленджи
+	go checkAchievementsAndChallenges(userID.(uint), "green", 1.0, float64(points), true)
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "Green action uploaded successfully",
+		"points":  points,
+	})
+}
+
+// Функция расчета поинтов для зеленых действий
+func calculateGreenActionPoints(payload map[string]interface{}) int {
+	option, _ := payload["option"].(string)
+
+	switch option {
+	case "planted_tree":
+		return 50 // Посадка дерева - максимальные поинты
+	case "solar_power":
+		return 30 // Солнечная энергия - высокие поинты
+	case "composting":
+		return 25 // Компостирование - высокие поинты
+	case "recycling":
+		return 20 // Переработка - хорошие поинты
+	case "water_conservation":
+		return 15 // Сохранение воды - средние поинты
+	case "energy_saving":
+		return 15 // Энергосбережение - средние поинты
+	case "waste_reduction":
+		return 15 // Сокращение отходов - средние поинты
+	case "used_bike":
+		return 20 // Использование велосипеда - хорошие поинты
+	case "public_transport":
+		return 15 // Общественный транспорт - средние поинты
+	case "lights_off":
+		return 10 // Выключение света - базовые поинты
+	default:
+		return 10 // По умолчанию
+	}
+}
+
+// Улучшенная функция форматирования заголовков
+func formatTransportationActionTitle(transportType, vehicle string, distance float64, isEcoFriendly bool) string {
+	ecoIcon := ""
+	if isEcoFriendly {
+		ecoIcon = "🌱 "
+	} else {
+		ecoIcon = "🚗 "
+	}
+
+	distanceStr := fmt.Sprintf("%.1f km", distance)
+
+	switch transportType {
+	case "bicycle":
+		return fmt.Sprintf("%sBiked %s", ecoIcon, distanceStr)
+	case "walking":
+		return fmt.Sprintf("%sWalked %s", ecoIcon, distanceStr)
+	case "public_transport":
+		return fmt.Sprintf("%sUsed public transport for %s", ecoIcon, distanceStr)
+	case "electric_car":
+		return fmt.Sprintf("%sDrove electric car %s", ecoIcon, distanceStr)
+	default:
+		if vehicle != "" {
+			return fmt.Sprintf("%sUsed %s for %s", ecoIcon, vehicle, distanceStr)
+		}
+		return fmt.Sprintf("%sTransportation: %s", ecoIcon, distanceStr)
+	}
+}
+
+// Асинхронная проверка достижений и челленджей
+func checkAchievementsAndChallenges(userID uint, actionType string, value, points float64, isEcoFriendly bool) {
+	// Проверяем достижения
+	checkUserAchievements(userID, actionType, value, points, isEcoFriendly)
+
+	// Обновляем прогресс weekly challenge
+	updateWeeklyChallengeProgress(userID, actionType, value, points, isEcoFriendly)
+}
+
+// Проверка достижений пользователя
+func checkUserAchievements(userID uint, actionType string, value, points float64, isEcoFriendly bool) {
+	var userAchievements []models.UserAchievement
+	db.DB.Preload("Achievement").Where("user_id = ? AND is_achieved = ?", userID, false).Find(&userAchievements)
+
+	for _, ua := range userAchievements {
+		shouldAchieve := false
+
+		// Простая логика проверки достижений
+		switch ua.Achievement.Title {
+		case "First Green Action":
+			if actionType == "green" {
+				shouldAchieve = true
+			}
+		case "Eco Traveler":
+			if actionType == "transportation" && isEcoFriendly {
+				shouldAchieve = true
+			}
+		case "Point Collector":
+			// Проверяем общее количество поинтов пользователя
+			var user models.User
+			if db.DB.First(&user, userID).Error == nil && user.Points >= 100 {
+				shouldAchieve = true
+			}
+		case "Distance Master":
+			if actionType == "transportation" && value >= 50.0 {
+				shouldAchieve = true
+			}
+		case "Green Warrior":
+			// Проверяем количество зеленых действий
+			var greenActionCount int64
+			db.DB.Model(&models.Action{}).Where("user_id = ? AND action_type = ?", userID, "green").Count(&greenActionCount)
+			if greenActionCount >= 10 {
+				shouldAchieve = true
+			}
+		}
+
+		if shouldAchieve {
+			ua.IsAchieved = true
+			achievedAt := time.Now()
+			ua.AchievedAt = &achievedAt
+			db.DB.Save(&ua)
+
+			// Добавляем поинты за достижение
+			if ua.Achievement.Points > 0 {
+				db.DB.Model(&models.User{}).Where("id = ?", userID).Update("points", gorm.Expr("points + ?", ua.Achievement.Points))
+			}
+		}
+	}
+}
+
+// Обновление прогресса weekly challenge
+func updateWeeklyChallengeProgress(userID uint, actionType string, value, points float64, isEcoFriendly bool) {
+	var userChallenge models.UserWeeklyChallenge
+	if db.DB.Preload("WeeklyChallenge").Where("user_id = ? AND completed = ?", userID, false).First(&userChallenge).Error != nil {
+		return // Нет активного челленджа
+	}
+
+	// Простая логика обновления прогресса
+	var progressIncrement float64 = 0
+
+	switch userChallenge.WeeklyChallenge.Title {
+	case "Eco Transport Week":
+		if actionType == "transportation" && isEcoFriendly {
+			progressIncrement = value // Добавляем пройденное расстояние
+		}
+	case "Green Actions Week":
+		if actionType == "green" {
+			progressIncrement = 1 // Добавляем одно действие
+		}
+	case "Point Challenge":
+		if points > 0 {
+			progressIncrement = points // Добавляем заработанные поинты
+		}
+	case "Carbon Reduction":
+		if isEcoFriendly {
+			progressIncrement = math.Max(value*0.1, 1) // Добавляем сокращение углерода
+		}
+	}
+
+	if progressIncrement > 0 {
+		userChallenge.CurrentValue += progressIncrement
+
+		// Проверяем, выполнен ли челлендж
+		if userChallenge.CurrentValue >= userChallenge.WeeklyChallenge.TargetValue && !userChallenge.IsCompleted {
+			userChallenge.IsCompleted = true
+			completedAt := time.Now()
+			userChallenge.CompletedAt = &completedAt
+
+			// Добавляем поинты за выполнение челленджа
+			if userChallenge.WeeklyChallenge.Points > 0 {
+				db.DB.Model(&models.User{}).Where("id = ?", userID).Update("points", gorm.Expr("points + ?", userChallenge.WeeklyChallenge.Points))
+			}
+		}
+
+		db.DB.Save(&userChallenge)
+	}
 }

@@ -32,19 +32,16 @@ func GetCompletedChallenges(c *gin.Context) {
 
 	var response CompletedChallengesResponse
 
-	// Get completed mini challenges
 	database.DB.Where("user_id = ? AND completed = ?", userId, true).
 		Preload("MiniChallenge").
 		Order("completed_at DESC").
 		Find(&response.MiniChallenges)
 
-	// Get completed weekly challenges
 	database.DB.Where("user_id = ? AND completed = ?", userId, true).
 		Preload("WeeklyChallenge").
 		Order("completed_at DESC").
 		Find(&response.WeeklyChallenges)
 
-	// Calculate total points from completed challenges
 	var miniPoints int
 	database.DB.Table("user_mini_challenges").
 		Select("COALESCE(SUM(mini_challenges.points), 0)").
@@ -61,7 +58,6 @@ func GetCompletedChallenges(c *gin.Context) {
 
 	response.TotalPoints = miniPoints + weeklyPoints
 
-	// Calculate completion stats
 	database.DB.Model(&models.UserMiniChallenge{}).
 		Where("user_id = ? AND completed = ?", userId, true).
 		Count(&response.CompletionStats.TotalMiniCompleted)
@@ -70,7 +66,6 @@ func GetCompletedChallenges(c *gin.Context) {
 		Where("user_id = ? AND completed = ?", userId, true).
 		Count(&response.CompletionStats.TotalWeeklyCompleted)
 
-	// Calculate completion rate
 	var totalAssigned int64
 	database.DB.Model(&models.UserMiniChallenge{}).Where("user_id = ?", userId).Count(&totalAssigned)
 

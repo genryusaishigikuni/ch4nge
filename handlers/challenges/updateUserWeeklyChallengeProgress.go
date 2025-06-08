@@ -8,9 +8,6 @@ import (
 	"time"
 )
 
-// Структура для обновления прогресса
-
-// UpdateUserWeeklyChallengeProgress Обновление прогресса пользователя по weekly challenge
 func UpdateUserWeeklyChallengeProgress(c *gin.Context) {
 	userID := c.Param("userId")
 	challengeID := c.Param("challengeId")
@@ -28,17 +25,14 @@ func UpdateUserWeeklyChallengeProgress(c *gin.Context) {
 		return
 	}
 
-	// Обновляем current value
 	userChallenge.CurrentValue = req.CurrentValue
 
-	// Проверяем, выполнен ли challenge
 	var challenge models.WeeklyChallenge
 	if err := db.DB.First(&challenge, userChallenge.WeeklyChallengeID).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch challenge details"})
 		return
 	}
 
-	// Если current value >= target value, отмечаем как выполненный
 	if userChallenge.CurrentValue >= challenge.TargetValue && !userChallenge.IsCompleted {
 		userChallenge.IsCompleted = true
 		now := time.Now()
@@ -50,7 +44,6 @@ func UpdateUserWeeklyChallengeProgress(c *gin.Context) {
 		return
 	}
 
-	// Возвращаем обновленный результат
 	response := models.WeeklyChallengeResponse{
 		WeeklyChallengeID: userChallenge.WeeklyChallengeID,
 		UserID:            userChallenge.UserID,

@@ -11,8 +11,6 @@ import (
 func LikePost(c *gin.Context) {
 	postID := c.Param("postId")
 
-	// Get user ID from JWT token (set by auth middleware)
-	// FIXED: Changed from "userID" to "user_id" to match what AuthMiddleware sets
 	userIDInterface, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
@@ -25,23 +23,19 @@ func LikePost(c *gin.Context) {
 		return
 	}
 
-	// Get the post
 	var post models.Post
 	if err := db.DB.First(&post, utils.ParseUint(postID)).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Post not found"})
 		return
 	}
 
-	// Toggle like status
 	isLiked := post.ToggleLike(userID)
 
-	// Update the post in database
 	if err := db.DB.Save(&post).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update post"})
 		return
 	}
 
-	// Load user information for response
 	db.DB.Preload("User").First(&post, post.ID)
 
 	response := gin.H{

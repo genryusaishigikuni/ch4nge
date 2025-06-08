@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/genryusaishigikuni/ch4nge/config"
 	"github.com/genryusaishigikuni/ch4nge/database"
+	"github.com/genryusaishigikuni/ch4nge/handlers/seeder"
 	"github.com/genryusaishigikuni/ch4nge/routes"
 	"github.com/gin-gonic/gin"
 	"log"
@@ -22,6 +23,9 @@ func main() {
 	// Initialize database
 	database.InitDB()
 
+	if err := seeder.InitializeBasicData(); err != nil {
+		log.Fatal("Failed to initialize basic data:", err)
+	}
 	// Setup Gin
 	r := gin.Default()
 
