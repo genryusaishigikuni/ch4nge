@@ -42,6 +42,7 @@ func SetupRoutes(r *gin.Engine) {
 			users.GET("/:userId/activities", Activity.GetUserActivities) // User's own activities
 			users.GET("/:userId/posts", Post.GetUserPosts)               // User's own posts
 			users.GET("/:userId/dashboard", User.GetUserDashboard)       // Overall dashboard
+			users.GET("/:userId/ghg-index", User.GetUserGHGIndex)
 
 			// Achievement routes
 			users.GET("/:userId/achievements", Achievement.GetAllAchievements)

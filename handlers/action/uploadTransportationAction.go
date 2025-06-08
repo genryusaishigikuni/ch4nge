@@ -1,12 +1,45 @@
 package action
 
 import (
-	db "github.com/genryusaishigikuni/ch4nge/database"
+	"net/http"
+
+	"github.com/genryusaishigikuni/ch4nge/database"
 	"github.com/genryusaishigikuni/ch4nge/models"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	"net/http"
 )
+
+func CalculateGHGIndex(distance, fuelConsumption float64, passengers int) float64 {
+	if passengers <= 0 {
+		passengers = 1
+	}
+	co2PerKm := (fuelConsumption / 100.0) * 2.3
+	totalCO2 := co2PerKm * distance
+	return totalCO2 / float64(passengers)
+}
+
+func CalculateGHGPoints(distance float64, fuelConsumption float64, passengers int) int {
+	if passengers <= 0 {
+		passengers = 1
+	}
+
+	co2PerKm := (fuelConsumption / 100.0) * 2.3
+	totalCO2 := co2PerKm * distance
+	co2PerPerson := totalCO2 / float64(passengers)
+
+	switch {
+	case co2PerPerson > 40:
+		return -10
+	case co2PerPerson > 25:
+		return -5
+	case co2PerPerson > 15:
+		return 0
+	case co2PerPerson > 5:
+		return 5
+	default:
+		return 10
+	}
+}
 
 func UploadTransportationAction(c *gin.Context) {
 	userID, _ := c.Get("user_id")
@@ -17,11 +50,12 @@ func UploadTransportationAction(c *gin.Context) {
 		return
 	}
 
-	// Calculate points based on eco-friendliness
-	points := 5 // Default points
-	if metadata, ok := req.Metadata["isEcoFriendly"].(bool); ok && metadata {
-		points = 15
-	}
+	distance, _ := req.Payload["distance"].(float64)
+	fuelConsumption, _ := req.Payload["fuelConsumption"].(float64)
+	passengers, _ := req.Payload["passengers"].(float64)
+
+	points := CalculateGHGPoints(distance, fuelConsumption, int(passengers))
+	ghg := CalculateGHGIndex(distance, fuelConsumption, int(passengers))
 
 	action := models.Action{
 		UserID:     userID.(uint),
@@ -31,19 +65,19 @@ func UploadTransportationAction(c *gin.Context) {
 		Points:     points,
 	}
 
-	if err := db.DB.Create(&action).Error; err != nil {
+	if err := database.DB.Create(&action).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload transportation action"})
 		return
 	}
 
-	// Update user points
-	db.DB.Model(&models.User{}).Where("id = ?", userID).Update("points", gorm.Expr("points + ?", action.Points))
+	database.DB.Model(&models.User{}).Where("id = ?", userID).Update("points", gorm.Expr("points + ?", action.Points))
+	database.DB.Model(&models.User{}).Where("id = ?", userID).Update("ghg_index", gorm.Expr("ghg_index + ?", ghg))
 
-	// Update user location if provided in action payload
+	// Optional: update user location
 	if locationArray, ok := req.Payload["location"].([]interface{}); ok && len(locationArray) == 2 {
 		if latitude, ok := locationArray[0].(float64); ok {
 			if longitude, ok := locationArray[1].(float64); ok {
-				db.DB.Model(&models.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
+				database.DB.Model(&models.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
 					"latitude":  latitude,
 					"longitude": longitude,
 				})
@@ -51,7 +85,6 @@ func UploadTransportationAction(c *gin.Context) {
 		}
 	}
 
-	// Get action title from payload
 	actionTitle := "Used transportation"
 	if option, ok := req.Payload["option"].(string); ok && option != "" {
 		if vehicle, ok := req.Payload["vehicle"].(string); ok && vehicle != "" {
@@ -61,13 +94,12 @@ func UploadTransportationAction(c *gin.Context) {
 		}
 	}
 
-	// Create activity
 	activity := models.Activity{
 		UserID: userID.(uint),
 		Title:  actionTitle,
 		Value:  points,
 	}
-	db.DB.Create(&activity)
+	database.DB.Create(&activity)
 
 	c.JSON(http.StatusCreated, gin.H{"message": "Transportation action uploaded successfully."})
 }
