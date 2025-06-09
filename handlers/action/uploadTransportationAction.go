@@ -3,6 +3,7 @@ package action
 import (
 	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	db "github.com/genryusaishigikuni/ch4nge/database"
@@ -91,6 +92,8 @@ func UploadTransportationAction(c *gin.Context) {
 	passengers, _ := req.Payload["passengers"].(float64)
 	transportType, _ := req.Payload["transportType"].(string)
 	vehicle, _ := req.Payload["vehicle"].(string)
+	// Normalize transport type to handle variations like "e-scooter"
+	transportType = strings.ToLower(strings.ReplaceAll(transportType, "-", "_"))
 
 	points, ghg, isEcoFriendly := CalculateTransportationImpact(distance, fuelConsumption, int(passengers), transportType)
 
@@ -287,9 +290,10 @@ func checkUserAchievements(userID uint, actionType string, value, points float64
 		// Простая логика проверки достижений
 		switch ua.Achievement.Title {
 		case "First Green Action":
-			if actionType == "green" {
+			if actionType == "green" || (actionType == "transportation" && isEcoFriendly) {
 				shouldAchieve = true
 			}
+
 		case "Eco Traveler":
 			if actionType == "transportation" && isEcoFriendly {
 				shouldAchieve = true
