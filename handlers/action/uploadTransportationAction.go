@@ -78,9 +78,6 @@ func CalculateTransportationImpact(distance, fuelConsumption float64, passengers
 }
 
 // UploadTransportationAction Улучшенная функция загрузки транспортного действия
-// UploadTransportationAction
-// UploadTransportationAction Улучшенная функция загрузки транспортного действия
-// UploadTransportationAction
 func UploadTransportationAction(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 
@@ -103,11 +100,10 @@ func UploadTransportationAction(c *gin.Context) {
 	// Calculate the transportation impact (GHG, points, eco-friendliness)
 	points, ghg, isEcoFriendly := CalculateTransportationImpact(distance, fuelConsumption, int(passengers), transportType)
 
-	// Check if it's the first eco-friendly action for the user
+	// **New check** for First Eco-Friendly Action
 	var userActionsCount int64
 	db.DB.Model(&models.Action{}).Where("user_id = ?", userID).Count(&userActionsCount)
 
-	// Check if it’s the first eco-friendly action
 	if userActionsCount == 1 && isEcoFriendly { // First eco-friendly action
 		// Trigger "First Green Action" achievement
 		var firstActionAchievement models.Achievement
@@ -131,7 +127,7 @@ func UploadTransportationAction(c *gin.Context) {
 		}
 	}
 
-	// Create action record
+	// Continue with your normal action saving logic
 	action := models.Action{
 		UserID:     userID.(uint),
 		ActionType: req.ActionType,
@@ -187,27 +183,35 @@ func UploadTransportationAction(c *gin.Context) {
 	c.JSON(http.StatusCreated, response)
 }
 
-// UploadGreenAction Улучшенная функция загрузки зеленого действия
 func UploadGreenAction(c *gin.Context) {
-
 	userID, _ := c.Get("user_id")
 
-	// Check if it's the first action for the user
+	// Check if it's the first green action for the user
 	var userActionsCount int64
 	db.DB.Model(&models.Action{}).Where("user_id = ?", userID).Count(&userActionsCount)
 
-	if userActionsCount == 1 { // First action (the user has just performed their first action)
-		// Trigger "First Action" achievement
+	// Check if it’s the first green action (the user has just performed their first green action)
+	if userActionsCount == 1 { // First action
 		var firstActionAchievement models.Achievement
+		// Ensure we only award the "First Green Action" achievement
 		if err := db.DB.Where("title = ?", "First Green Action").First(&firstActionAchievement).Error; err == nil {
-			userAchievement := models.UserAchievement{
-				UserID:        userID.(uint),
-				AchievementID: firstActionAchievement.ID,
+			var userAchievement models.UserAchievement
+			// Check if the user already has the achievement
+			db.DB.Where("user_id = ? AND achievement_id = ?", userID.(uint), firstActionAchievement.ID).First(&userAchievement)
+
+			// Create the achievement only if it hasn't been awarded yet
+			if userAchievement.ID == 0 { // Achievement not found
+				userAchievement = models.UserAchievement{
+					UserID:        userID.(uint),
+					AchievementID: firstActionAchievement.ID,
+					IsAchieved:    true,
+				}
+
+				// Mark as achieved
+				achievedAt := time.Now()
+				userAchievement.AchievedAt = &achievedAt
+				db.DB.Create(&userAchievement) // Save to DB
 			}
-			db.DB.FirstOrCreate(&userAchievement, models.UserAchievement{
-				UserID:        userID.(uint),
-				AchievementID: firstActionAchievement.ID,
-			})
 		}
 	}
 
@@ -217,7 +221,7 @@ func UploadGreenAction(c *gin.Context) {
 		return
 	}
 
-	// Расчет поинтов на основе типа зеленого действия
+	// Calculate points for the green action
 	points := calculateGreenActionPoints(req.Payload)
 
 	action := models.Action{
@@ -228,15 +232,16 @@ func UploadGreenAction(c *gin.Context) {
 		Points:     points,
 	}
 
+	// Save the action to the database
 	if err := db.DB.Create(&action).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload green action"})
 		return
 	}
 
-	// Обновляем поинты пользователя
+	// Update user's points after the green action
 	db.DB.Model(&models.User{}).Where("id = ?", userID).Update("points", gorm.Expr("points + ?", points))
 
-	// Обновляем локацию пользователя если предоставлена
+	// Update user location if provided in the payload
 	if locationArray, ok := req.Payload["location"].([]interface{}); ok && len(locationArray) == 2 {
 		if latitude, ok := locationArray[0].(float64); ok {
 			if longitude, ok := locationArray[1].(float64); ok {
@@ -248,11 +253,11 @@ func UploadGreenAction(c *gin.Context) {
 		}
 	}
 
-	// Получаем заголовок действия
+	// Format the title of the green action based on the option
 	option, _ := req.Payload["option"].(string)
 	actionTitle := formatGreenActionTitle(option)
 
-	// Создаем активность
+	// Create activity record based on the green action
 	activity := models.Activity{
 		UserID: userID.(uint),
 		Title:  actionTitle,
@@ -260,9 +265,10 @@ func UploadGreenAction(c *gin.Context) {
 	}
 	db.DB.Create(&activity)
 
-	// Проверяем достижения и челленджи
+	// Check achievements and challenges asynchronously
 	go checkAchievementsAndChallenges(userID.(uint), "green", 1.0, float64(points), true)
 
+	// Send success response
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "Green action uploaded successfully",
 		"points":  points,
