@@ -3,34 +3,46 @@ package action
 import (
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
+	"log"
 	"strings"
 )
 
 var titleCaser = cases.Title(language.English)
 
 func formatGreenActionTitle(option string) string {
+	// Log the option that is being processed
+	log.Printf("Processing green action option: %s", option)
+
+	// Determine the formatted action title based on the option
+	var actionTitle string
 	switch strings.ToLower(option) {
 	case "planted_tree":
-		return "Planted a tree"
+		actionTitle = "Planted a tree"
 	case "lights_off":
-		return "Turned off lights"
+		actionTitle = "Turned off lights"
 	case "used_bike":
-		return "Used bicycle"
+		actionTitle = "Used bicycle"
 	case "recycling":
-		return "Recycled items"
+		actionTitle = "Recycled items"
 	case "water_conservation":
-		return "Conserved water"
+		actionTitle = "Conserved water"
 	case "energy_saving":
-		return "Saved energy"
+		actionTitle = "Saved energy"
 	case "waste_reduction":
-		return "Reduced waste"
+		actionTitle = "Reduced waste"
 	case "composting":
-		return "Composted organic waste"
+		actionTitle = "Composted organic waste"
 	case "solar_power":
-		return "Used solar power"
+		actionTitle = "Used solar power"
 	case "public_transport":
-		return "Used public transport"
+		actionTitle = "Used public transport"
 	default:
-		return titleCaser.String(strings.ReplaceAll(option, "_", " "))
+		actionTitle = titleCaser.String(strings.ReplaceAll(option, "_", " "))
 	}
+
+	// Log the formatted action title
+	log.Printf("Formatted green action title: %s", actionTitle)
+
+	// Return the formatted title
+	return actionTitle
 }

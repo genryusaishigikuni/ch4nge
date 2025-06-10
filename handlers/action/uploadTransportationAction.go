@@ -3,6 +3,8 @@ package action
 import (
 	"fmt"
 	"math"
+
+	"log"
 	"strings"
 	"time"
 
@@ -13,27 +15,26 @@ import (
 	"net/http"
 )
 
-// CalculateTransportationImpact Улучшенная функция расчета GHG и поинтов
 func CalculateTransportationImpact(distance, fuelConsumption float64, passengers int, transportType string) (points int, ghg float64, isEcoFriendly bool) {
 	if passengers <= 0 {
 		passengers = 1
 	}
 
-	// Базовый расчет CO2 (кг CO2 на км)
 	var co2PerKm float64
+	log.Printf("Calculating CO2 impact for transport type: %s", transportType)
 
 	switch transportType {
 	case "bicycle", "walking", "scooter":
-		co2PerKm = 0 // Экологичный транспорт
+		co2PerKm = 0
 		isEcoFriendly = true
 	case "public_transport", "bus", "metro", "train":
-		co2PerKm = 0.05 // Общественный транспорт
+		co2PerKm = 0.05
 		isEcoFriendly = true
 	case "electric_car":
-		co2PerKm = 0.1 // Электромобиль
+		co2PerKm = 0.1
 		isEcoFriendly = true
 	case "car", "private_vehicle":
-		co2PerKm = (fuelConsumption / 100.0) * 2.3 // Личный автомобиль
+		co2PerKm = (fuelConsumption / 100.0) * 2.3
 		isEcoFriendly = false
 	case "motorcycle":
 		co2PerKm = (fuelConsumption / 100.0) * 2.1
@@ -46,10 +47,10 @@ func CalculateTransportationImpact(distance, fuelConsumption float64, passengers
 	totalCO2 := co2PerKm * distance
 	ghg = totalCO2 / float64(passengers)
 
-	// Расчет поинтов на основе экологичности
+	log.Printf("Total CO2 impact: %.2f, GHG per person: %.2f", totalCO2, ghg)
+
 	if isEcoFriendly {
-		// Позитивные поинты за экологичный транспорт
-		basePoints := int(distance * 0.5) // 0.5 поинта за км
+		basePoints := int(distance * 0.5)
 		if basePoints > 50 {
 			basePoints = 50
 		}
@@ -58,26 +59,24 @@ func CalculateTransportationImpact(distance, fuelConsumption float64, passengers
 		}
 		points = basePoints
 	} else {
-		// Негативные поинты за неэкологичный транспорт
 		co2PerPerson := ghg
 		switch {
 		case co2PerPerson > 50:
-			points = -15 // Очень плохо
+			points = -15
 		case co2PerPerson > 30:
-			points = -10 // Плохо
+			points = -10
 		case co2PerPerson > 15:
-			points = -5 // Не очень
+			points = -5
 		case co2PerPerson > 5:
-			points = 0 // Нейтрально
+			points = 0
 		default:
-			points = 2 // Немного хорошо
+			points = 2
 		}
 	}
 
 	return points, ghg, isEcoFriendly
 }
 
-// UploadTransportationAction Улучшенная функция загрузки транспортного действия
 func UploadTransportationAction(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 
@@ -94,18 +93,15 @@ func UploadTransportationAction(c *gin.Context) {
 	transportType, _ := req.Payload["transportType"].(string)
 	vehicle, _ := req.Payload["vehicle"].(string)
 
-	// Normalize transport type (handle variations like "e-scooter")
 	transportType = strings.ToLower(strings.ReplaceAll(transportType, "-", "_"))
 
-	// Calculate the transportation impact (GHG, points, eco-friendliness)
 	points, ghg, isEcoFriendly := CalculateTransportationImpact(distance, fuelConsumption, int(passengers), transportType)
 
-	// **New check** for First Eco-Friendly Action
 	var userActionsCount int64
 	db.DB.Model(&models.Action{}).Where("user_id = ?", userID).Count(&userActionsCount)
+	log.Printf("User %d has performed %d actions.", userID, userActionsCount)
 
 	if userActionsCount == 1 && isEcoFriendly { // First eco-friendly action
-		// Trigger "First Green Action" achievement
 		var firstActionAchievement models.Achievement
 		if err := db.DB.Where("title = ?", "First Green Action").First(&firstActionAchievement).Error; err == nil {
 			userAchievement := models.UserAchievement{
@@ -119,15 +115,16 @@ func UploadTransportationAction(c *gin.Context) {
 				AchievementID: firstActionAchievement.ID,
 			})
 
-			// Mark the achievement as achieved
 			userAchievement.IsAchieved = true
 			achievedAt := time.Now()
 			userAchievement.AchievedAt = &achievedAt
 			db.DB.Save(&userAchievement)
+
+			log.Printf("User %d achieved 'First Green Action'.", userID)
 		}
 	}
 
-	// Continue with your normal action saving logic
+	// Save action to the database
 	action := models.Action{
 		UserID:     userID.(uint),
 		ActionType: req.ActionType,
@@ -136,7 +133,6 @@ func UploadTransportationAction(c *gin.Context) {
 		Points:     points,
 	}
 
-	// Save action to the database
 	if err := db.DB.Create(&action).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload transportation action"})
 		return
@@ -154,11 +150,12 @@ func UploadTransportationAction(c *gin.Context) {
 					"latitude":  latitude,
 					"longitude": longitude,
 				})
+				log.Printf("User %d location updated: %.6f, %.6f", userID, latitude, longitude)
 			}
 		}
 	}
 
-	// Format action title based on transport type
+	// Format action title
 	actionTitle := formatTransportationActionTitle(transportType, vehicle, distance, isEcoFriendly)
 
 	// Create activity record
@@ -189,17 +186,14 @@ func UploadGreenAction(c *gin.Context) {
 	// Check if it's the first green action for the user
 	var userActionsCount int64
 	db.DB.Model(&models.Action{}).Where("user_id = ?", userID).Count(&userActionsCount)
+	log.Printf("User %d has performed %d green actions.", userID, userActionsCount)
 
-	// Check if it’s the first green action (the user has just performed their first green action)
 	if userActionsCount == 1 { // First action
 		var firstActionAchievement models.Achievement
-		// Ensure we only award the "First Green Action" achievement
 		if err := db.DB.Where("title = ?", "First Green Action").First(&firstActionAchievement).Error; err == nil {
 			var userAchievement models.UserAchievement
-			// Check if the user already has the achievement
 			db.DB.Where("user_id = ? AND achievement_id = ?", userID.(uint), firstActionAchievement.ID).First(&userAchievement)
 
-			// Create the achievement only if it hasn't been awarded yet
 			if userAchievement.ID == 0 { // Achievement not found
 				userAchievement = models.UserAchievement{
 					UserID:        userID.(uint),
@@ -207,10 +201,10 @@ func UploadGreenAction(c *gin.Context) {
 					IsAchieved:    true,
 				}
 
-				// Mark as achieved
 				achievedAt := time.Now()
 				userAchievement.AchievedAt = &achievedAt
-				db.DB.Create(&userAchievement) // Save to DB
+				db.DB.Create(&userAchievement)
+				log.Printf("User %d achieved 'First Green Action'.", userID)
 			}
 		}
 	}
@@ -232,16 +226,14 @@ func UploadGreenAction(c *gin.Context) {
 		Points:     points,
 	}
 
-	// Save the action to the database
 	if err := db.DB.Create(&action).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload green action"})
 		return
 	}
 
-	// Update user's points after the green action
 	db.DB.Model(&models.User{}).Where("id = ?", userID).Update("points", gorm.Expr("points + ?", points))
 
-	// Update user location if provided in the payload
+	// Update location if available
 	if locationArray, ok := req.Payload["location"].([]interface{}); ok && len(locationArray) == 2 {
 		if latitude, ok := locationArray[0].(float64); ok {
 			if longitude, ok := locationArray[1].(float64); ok {
@@ -249,11 +241,12 @@ func UploadGreenAction(c *gin.Context) {
 					"latitude":  latitude,
 					"longitude": longitude,
 				})
+				log.Printf("User %d location updated: %.6f, %.6f", userID, latitude, longitude)
 			}
 		}
 	}
 
-	// Format the title of the green action based on the option
+	// Format action title
 	option, _ := req.Payload["option"].(string)
 	actionTitle := formatGreenActionTitle(option)
 
@@ -275,37 +268,39 @@ func UploadGreenAction(c *gin.Context) {
 	})
 }
 
-// Функция расчета поинтов для зеленых действий
+// Function to calculate points for green actions
 func calculateGreenActionPoints(payload map[string]interface{}) int {
 	option, _ := payload["option"].(string)
 
+	log.Printf("Calculating points for green action: %s", option)
+
 	switch option {
 	case "planted_tree":
-		return 50 // Посадка дерева - максимальные поинты
+		return 50
 	case "solar_power":
-		return 30 // Солнечная энергия - высокие поинты
+		return 30
 	case "composting":
-		return 25 // Компостирование - высокие поинты
+		return 25
 	case "recycling":
-		return 20 // Переработка - хорошие поинты
+		return 20
 	case "water_conservation":
-		return 15 // Сохранение воды - средние поинты
+		return 15
 	case "energy_saving":
-		return 15 // Энергосбережение - средние поинты
+		return 15
 	case "waste_reduction":
-		return 15 // Сокращение отходов - средние поинты
+		return 15
 	case "used_bike":
-		return 20 // Использование велосипеда - хорошие поинты
+		return 20
 	case "public_transport":
-		return 15 // Общественный транспорт - средние поинты
+		return 15
 	case "lights_off":
-		return 10 // Выключение света - базовые поинты
+		return 10
 	default:
-		return 10 // По умолчанию
+		return 10
 	}
 }
 
-// Улучшенная функция форматирования заголовков
+// Function to format transportation action title
 func formatTransportationActionTitle(transportType, vehicle string, distance float64, isEcoFriendly bool) string {
 	ecoIcon := ""
 	if isEcoFriendly {
@@ -333,16 +328,16 @@ func formatTransportationActionTitle(transportType, vehicle string, distance flo
 	}
 }
 
-// Асинхронная проверка достижений и челленджей
+// Asynchronous check for achievements and challenges
 func checkAchievementsAndChallenges(userID uint, actionType string, value, points float64, isEcoFriendly bool) {
-	// Проверяем достижения
+	log.Printf("Checking achievements and challenges for user %d", userID)
+	// Check achievements
 	checkUserAchievements(userID, actionType, value, points, isEcoFriendly)
 
-	// Обновляем прогресс weekly challenge
+	// Update progress of weekly challenge
 	updateWeeklyChallengeProgress(userID, actionType, value, points, isEcoFriendly)
 }
 
-// Проверка достижений пользователя
 func checkUserAchievements(userID uint, actionType string, value, points float64, isEcoFriendly bool) {
 	var userAchievements []models.UserAchievement
 	db.DB.Preload("Achievement").Where("user_id = ? AND is_achieved = ?", userID, false).Find(&userAchievements)
