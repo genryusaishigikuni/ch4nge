@@ -138,6 +138,9 @@ func UploadTransportationAction(c *gin.Context) {
 		return
 	}
 
+	// Update the user's weekly challenge progress after a transportation action
+	go updateWeeklyChallengeProgress(userID.(uint), "transportation", distance, float64(points), isEcoFriendly)
+
 	// Update user's points and GHG index
 	db.DB.Model(&models.User{}).Where("id = ?", userID).Update("points", gorm.Expr("points + ?", points))
 	db.DB.Model(&models.User{}).Where("id = ?", userID).Update("ghg_index", gorm.Expr("ghg_index + ?", ghg))
