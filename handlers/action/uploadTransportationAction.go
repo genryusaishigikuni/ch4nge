@@ -82,6 +82,25 @@ func CalculateTransportationImpact(distance, fuelConsumption float64, passengers
 func UploadTransportationAction(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 
+	// Check if it's the first action for the user
+	var userActionsCount int64
+	db.DB.Model(&models.Action{}).Where("user_id = ?", userID).Count(&userActionsCount)
+
+	if userActionsCount == 1 { // First action (the user has just performed their first action)
+		// Trigger "First Action" achievement
+		var firstActionAchievement models.Achievement
+		if err := db.DB.Where("title = ?", "First Green Action").First(&firstActionAchievement).Error; err == nil {
+			userAchievement := models.UserAchievement{
+				UserID:        userID.(uint),
+				AchievementID: firstActionAchievement.ID,
+			}
+			db.DB.FirstOrCreate(&userAchievement, models.UserAchievement{
+				UserID:        userID.(uint),
+				AchievementID: firstActionAchievement.ID,
+			})
+		}
+	}
+
 	var req models.TransportationActionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -159,7 +178,27 @@ func UploadTransportationAction(c *gin.Context) {
 
 // UploadGreenAction Улучшенная функция загрузки зеленого действия
 func UploadGreenAction(c *gin.Context) {
+
 	userID, _ := c.Get("user_id")
+
+	// Check if it's the first action for the user
+	var userActionsCount int64
+	db.DB.Model(&models.Action{}).Where("user_id = ?", userID).Count(&userActionsCount)
+
+	if userActionsCount == 1 { // First action (the user has just performed their first action)
+		// Trigger "First Action" achievement
+		var firstActionAchievement models.Achievement
+		if err := db.DB.Where("title = ?", "First Green Action").First(&firstActionAchievement).Error; err == nil {
+			userAchievement := models.UserAchievement{
+				UserID:        userID.(uint),
+				AchievementID: firstActionAchievement.ID,
+			}
+			db.DB.FirstOrCreate(&userAchievement, models.UserAchievement{
+				UserID:        userID.(uint),
+				AchievementID: firstActionAchievement.ID,
+			})
+		}
+	}
 
 	var req models.GreenActionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
