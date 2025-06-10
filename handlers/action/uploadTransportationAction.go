@@ -381,7 +381,7 @@ func checkUserAchievements(userID uint, actionType string, value, points float64
 // updateWeeklyChallengeProgress
 func updateWeeklyChallengeProgress(userID uint, actionType string, value, points float64, isEcoFriendly bool) {
 	var userChallenge models.UserWeeklyChallenge
-	if db.DB.Preload("WeeklyChallenge").Where("user_id = ? AND completed = ?", userID, false).First(&userChallenge).Error != nil {
+	if db.DB.Preload("WeeklyChallenge").Where("user_id = ? AND is_completed = ?", userID, false).First(&userChallenge).Error != nil {
 		return // No active challenge
 	}
 
