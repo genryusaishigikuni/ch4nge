@@ -1,11 +1,14 @@
 module github.com/genryusaishigikuni/ch4nge
 
-go 1.24.2
+go 1.23.0
+
+toolchain go1.24.2
 
 require (
 	github.com/gin-gonic/gin v1.10.1
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	golang.org/x/crypto v0.38.0
+	golang.org/x/text v0.25.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.30.0
 )
@@ -42,7 +45,6 @@ require (
 	golang.org/x/net v0.25.0 // indirect
 	golang.org/x/sync v0.14.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/text v0.25.0 // indirect
 	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

@@ -22,7 +22,7 @@ services:
     networks:
       - ch4nge_network
 
-  # Application (Development)
+  # Application
   app:
     build:
       context: .
@@ -46,42 +46,15 @@ services:
       postgres:
         condition: service_healthy
     volumes:
-      - .:/app  # For development hot reload (optional)
+      - uploads_data:/app/uploads  # Persistent uploads storage
     networks:
       - ch4nge_network
     restart: unless-stopped
-
-  # Application (Production)
-  app-prod:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: ch4nge_api_prod
-    environment:
-      - ENVIRONMENT=production
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=eco_user
-      - DB_PASSWORD=eco_1234
-      - DB_NAME=eco_db
-      - DB_SSLMODE=require
-      - SERVER_PORT=8080
-      - SERVER_HOST=0.0.0.0
-      - JWT_SECRET=${JWT_SECRET:-please-change-this-in-production}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
-    ports:
-      - "8080:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - ch4nge_network
-    restart: unless-stopped
-    profiles:
-      - production
 
 volumes:
   postgres_data:
+    driver: local
+  uploads_data:
     driver: local
 
 networks:
