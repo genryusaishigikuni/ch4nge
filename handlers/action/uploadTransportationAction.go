@@ -377,17 +377,17 @@ func checkUserAchievements(userID uint, actionType string, value, points float64
 	}
 }
 
-// Обновление прогресса weekly challenge
-// updateWeeklyChallengeProgress
+// Update the progress of the user's weekly challenge.
 func updateWeeklyChallengeProgress(userID uint, actionType string, value, points float64, isEcoFriendly bool) {
 	var userChallenge models.UserWeeklyChallenge
 	if db.DB.Preload("WeeklyChallenge").Where("user_id = ? AND is_completed = ?", userID, false).First(&userChallenge).Error != nil {
 		return // No active challenge
 	}
 
-	// Logic for updating progress based on the weekly challenge title
+	// Calculate the progress increment based on the action type
 	var progressIncrement float64 = 0
 
+	// Check the type of challenge and update progress
 	switch userChallenge.WeeklyChallenge.Title {
 	case "Eco Transport Week":
 		if actionType == "transportation" && isEcoFriendly {
@@ -407,10 +407,11 @@ func updateWeeklyChallengeProgress(userID uint, actionType string, value, points
 		}
 	}
 
+	// If there is progress, update the challenge's current value
 	if progressIncrement > 0 {
 		userChallenge.CurrentValue += progressIncrement
 
-		// Check if the challenge is completed
+		// Check if the challenge is complete
 		if userChallenge.CurrentValue >= userChallenge.WeeklyChallenge.TargetValue && !userChallenge.IsCompleted {
 			userChallenge.IsCompleted = true
 			completedAt := time.Now()
@@ -422,6 +423,7 @@ func updateWeeklyChallengeProgress(userID uint, actionType string, value, points
 			}
 		}
 
+		// Save the updated challenge status
 		db.DB.Save(&userChallenge)
 	}
 }
