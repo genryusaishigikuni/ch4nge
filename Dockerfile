@@ -33,7 +33,7 @@ RUN addgroup -g 1001 -S appuser && \
     adduser -S -D -H -u 1001 -s /sbin/nologin -G appuser appuser
 
 # Create app directory and uploads directory with proper permissions
-RUN mkdir -p /app/uploads/profiles && \
+RUN mkdir -p /app/uploads/profiles /app/uploads/posts && \
     chown -R appuser:appuser /app && \
     chmod -R 755 /app
 

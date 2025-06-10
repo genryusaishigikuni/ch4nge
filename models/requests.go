@@ -34,8 +34,9 @@ type TransportationActionRequest struct {
 }
 
 type PostRequest struct {
-	UserID string `json:"userId" form:"userId" binding:"required"`
-	Title  string `json:"title" form:"title" binding:"required"`
+	UserID      string `json:"userId" form:"userId" binding:"required"`
+	Title       string `json:"title" form:"title" binding:"required"`
+	Description string `json:"description" form:"description"`
 }
 
 type LikePostRequest struct {

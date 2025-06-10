@@ -46,6 +46,7 @@ type Post struct {
 	SharesNumber int       `json:"sharesNumber" gorm:"-"` // Computed field, not stored
 	CreatedAt    time.Time `json:"createdAt"`
 	UpdatedAt    time.Time `json:"updatedAt"`
+	Description  string    `json:"description"`
 	User         User      `json:"user,omitempty" gorm:"foreignKey:UserID"`
 }
 
