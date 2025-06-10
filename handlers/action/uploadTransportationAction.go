@@ -393,11 +393,16 @@ func checkUserAchievements(userID uint, actionType string, value, points float64
 }
 
 // Update the progress of the user's weekly challenge.
+// Update the progress of the user's weekly challenge.
 func updateWeeklyChallengeProgress(userID uint, actionType string, value, points float64, isEcoFriendly bool) {
 	var userChallenge models.UserWeeklyChallenge
-	if db.DB.Preload("WeeklyChallenge").Where("user_id = ? AND is_completed = ?", userID, false).First(&userChallenge).Error != nil {
+	if err := db.DB.Preload("WeeklyChallenge").Where("user_id = ? AND is_completed = ?", userID, false).First(&userChallenge).Error; err != nil {
+		log.Printf("No active weekly challenge found for user %d: %v", userID, err)
 		return // No active challenge
 	}
+
+	log.Printf("Found active challenge '%s' for user %d. Current progress: %.2f/%.2f",
+		userChallenge.WeeklyChallenge.Title, userID, userChallenge.CurrentValue, userChallenge.WeeklyChallenge.TargetValue)
 
 	// Initialize the progress increment
 	var progressIncrement float64 = 0
@@ -407,37 +412,56 @@ func updateWeeklyChallengeProgress(userID uint, actionType string, value, points
 	case "Eco Transport Week":
 		if actionType == "transportation" && isEcoFriendly {
 			progressIncrement = value // Add traveled distance
+			log.Printf("Adding transportation distance: %.2f", progressIncrement)
 		}
 	case "Green Actions Week":
 		if actionType == "green" {
 			progressIncrement = 1 // Add 1 action for each green action
+			log.Printf("Adding green action count: %.2f", progressIncrement)
 		}
 	case "Point Challenge":
 		if points > 0 {
 			progressIncrement = points // Add points to the challenge
+			log.Printf("Adding points: %.2f", progressIncrement)
 		}
 	case "Carbon Reduction":
 		if isEcoFriendly {
 			progressIncrement = math.Max(value*0.1, 1) // Add carbon reduction progress
+			log.Printf("Adding carbon reduction progress: %.2f", progressIncrement)
 		}
 	}
 
 	// If there's progress, update the challenge
 	if progressIncrement > 0 {
 		userChallenge.CurrentValue += progressIncrement
+		log.Printf("Updated progress for user %d: %.2f -> %.2f (added %.2f)",
+			userID, userChallenge.CurrentValue-progressIncrement, userChallenge.CurrentValue, progressIncrement)
 
 		// Check if the challenge is completed
 		if userChallenge.CurrentValue >= userChallenge.WeeklyChallenge.TargetValue && !userChallenge.IsCompleted {
 			userChallenge.IsCompleted = true
 			completedAt := time.Now()
 			userChallenge.CompletedAt = &completedAt
+			log.Printf("Challenge '%s' completed for user %d!", userChallenge.WeeklyChallenge.Title, userID)
 
 			// Add points for completing the challenge
 			if userChallenge.WeeklyChallenge.Points > 0 {
-				db.DB.Model(&models.User{}).Where("id = ?", userID).Update("points", gorm.Expr("points + ?", userChallenge.WeeklyChallenge.Points))
+				if err := db.DB.Model(&models.User{}).Where("id = ?", userID).Update("points", gorm.Expr("points + ?", userChallenge.WeeklyChallenge.Points)).Error; err != nil {
+					log.Printf("Error updating user points for completing challenge: %v", err)
+				} else {
+					log.Printf("Added %d points to user %d for completing challenge", userChallenge.WeeklyChallenge.Points, userID)
+				}
 			}
 		}
 
-		db.DB.Save(&userChallenge) // Save the updated challenge progress
+		// THIS IS THE CRITICAL PART THAT WAS MISSING - SAVE THE UPDATED PROGRESS
+		if err := db.DB.Save(&userChallenge).Error; err != nil {
+			log.Printf("Error saving weekly challenge progress for user %d: %v", userID, err)
+		} else {
+			log.Printf("Successfully saved weekly challenge progress for user %d", userID)
+		}
+	} else {
+		log.Printf("No progress increment for challenge '%s' with action type '%s', eco-friendly: %v",
+			userChallenge.WeeklyChallenge.Title, actionType, isEcoFriendly)
 	}
 }
