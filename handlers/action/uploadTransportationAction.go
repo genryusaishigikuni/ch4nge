@@ -79,27 +79,10 @@ func CalculateTransportationImpact(distance, fuelConsumption float64, passengers
 
 // UploadTransportationAction Улучшенная функция загрузки транспортного действия
 // UploadTransportationAction
+// UploadTransportationAction Улучшенная функция загрузки транспортного действия
+// UploadTransportationAction
 func UploadTransportationAction(c *gin.Context) {
 	userID, _ := c.Get("user_id")
-
-	// Check if it's the first action for the user
-	var userActionsCount int64
-	db.DB.Model(&models.Action{}).Where("user_id = ?", userID).Count(&userActionsCount)
-
-	if userActionsCount == 1 { // First action (the user has just performed their first action)
-		// Trigger "First Action" achievement
-		var firstActionAchievement models.Achievement
-		if err := db.DB.Where("title = ?", "First Green Action").First(&firstActionAchievement).Error; err == nil {
-			userAchievement := models.UserAchievement{
-				UserID:        userID.(uint),
-				AchievementID: firstActionAchievement.ID,
-			}
-			db.DB.FirstOrCreate(&userAchievement, models.UserAchievement{
-				UserID:        userID.(uint),
-				AchievementID: firstActionAchievement.ID,
-			})
-		}
-	}
 
 	var req models.TransportationActionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -119,6 +102,34 @@ func UploadTransportationAction(c *gin.Context) {
 
 	// Calculate the transportation impact (GHG, points, eco-friendliness)
 	points, ghg, isEcoFriendly := CalculateTransportationImpact(distance, fuelConsumption, int(passengers), transportType)
+
+	// Check if it's the first eco-friendly action for the user
+	var userActionsCount int64
+	db.DB.Model(&models.Action{}).Where("user_id = ?", userID).Count(&userActionsCount)
+
+	// Check if it’s the first eco-friendly action
+	if userActionsCount == 1 && isEcoFriendly { // First eco-friendly action
+		// Trigger "First Green Action" achievement
+		var firstActionAchievement models.Achievement
+		if err := db.DB.Where("title = ?", "First Green Action").First(&firstActionAchievement).Error; err == nil {
+			userAchievement := models.UserAchievement{
+				UserID:        userID.(uint),
+				AchievementID: firstActionAchievement.ID,
+			}
+
+			// Create achievement only if it hasn't been awarded already
+			db.DB.FirstOrCreate(&userAchievement, models.UserAchievement{
+				UserID:        userID.(uint),
+				AchievementID: firstActionAchievement.ID,
+			})
+
+			// Mark the achievement as achieved
+			userAchievement.IsAchieved = true
+			achievedAt := time.Now()
+			userAchievement.AchievedAt = &achievedAt
+			db.DB.Save(&userAchievement)
+		}
+	}
 
 	// Create action record
 	action := models.Action{
@@ -384,14 +395,14 @@ func updateWeeklyChallengeProgress(userID uint, actionType string, value, points
 		return // No active challenge
 	}
 
-	// Calculate the progress increment based on the action type
+	// Initialize the progress increment
 	var progressIncrement float64 = 0
 
-	// Check the type of challenge and update progress
+	// Add the respective progress based on the challenge title
 	switch userChallenge.WeeklyChallenge.Title {
 	case "Eco Transport Week":
 		if actionType == "transportation" && isEcoFriendly {
-			progressIncrement = value // Add traveled distance to the challenge
+			progressIncrement = value // Add traveled distance
 		}
 	case "Green Actions Week":
 		if actionType == "green" {
@@ -407,11 +418,11 @@ func updateWeeklyChallengeProgress(userID uint, actionType string, value, points
 		}
 	}
 
-	// If there is progress, update the challenge's current value
+	// If there's progress, update the challenge
 	if progressIncrement > 0 {
 		userChallenge.CurrentValue += progressIncrement
 
-		// Check if the challenge is complete
+		// Check if the challenge is completed
 		if userChallenge.CurrentValue >= userChallenge.WeeklyChallenge.TargetValue && !userChallenge.IsCompleted {
 			userChallenge.IsCompleted = true
 			completedAt := time.Now()
@@ -423,7 +434,6 @@ func updateWeeklyChallengeProgress(userID uint, actionType string, value, points
 			}
 		}
 
-		// Save the updated challenge status
-		db.DB.Save(&userChallenge)
+		db.DB.Save(&userChallenge) // Save the updated challenge progress
 	}
 }
