@@ -186,11 +186,11 @@ func UploadTransportationAction(c *gin.Context) {
 	}
 	db.DB.Create(&activity)
 
-	// FIX 3: Update weekly challenge progress synchronously first, then check achievements
+	// FIX: Update weekly challenge progress synchronously ONLY ONCE
 	updateWeeklyChallengeProgress(userID.(uint), "transportation", distance, float64(points), isEcoFriendly)
 
-	// Check achievements and challenges asynchronously
-	go checkAchievementsAndChallenges(userID.(uint), "transportation", distance, float64(points), isEcoFriendly)
+	// Check achievements asynchronously (without updating weekly challenge again)
+	go checkUserAchievements(userID.(uint), "transportation", distance, float64(points), isEcoFriendly)
 
 	// Response
 	response := gin.H{
@@ -202,6 +202,7 @@ func UploadTransportationAction(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, response)
 }
+
 func UploadGreenAction(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 
@@ -350,7 +351,7 @@ func formatTransportationActionTitle(transportType, vehicle string, distance flo
 	}
 }
 
-// Asynchronous check for achievements and challenges
+// For transportation actions, use checkUserAchievements directly to avoid double counting
 func checkAchievementsAndChallenges(userID uint, actionType string, value, points float64, isEcoFriendly bool) {
 	log.Printf("Checking achievements and challenges for user %d", userID)
 	// Check achievements
@@ -359,7 +360,6 @@ func checkAchievementsAndChallenges(userID uint, actionType string, value, point
 	// Update progress of weekly challenge
 	updateWeeklyChallengeProgress(userID, actionType, value, points, isEcoFriendly)
 }
-
 func checkUserAchievements(userID uint, actionType string, value, points float64, isEcoFriendly bool) {
 	var userAchievements []models.UserAchievement
 	db.DB.Preload("Achievement").Where("user_id = ? AND is_achieved = ?", userID, false).Find(&userAchievements)
