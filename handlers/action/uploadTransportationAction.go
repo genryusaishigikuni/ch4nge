@@ -90,12 +90,32 @@ func UploadTransportationAction(c *gin.Context) {
 	distance, _ := req.Payload["distance"].(float64)
 	fuelConsumption, _ := req.Payload["fuelConsumption"].(float64)
 	passengers, _ := req.Payload["passengers"].(float64)
-	transportType, _ := req.Payload["transportType"].(string)
+
+	// FIX 1: Use actionType as transportType if transportType is not provided in payload
+	transportType, ok := req.Payload["transportType"].(string)
+	if !ok || transportType == "" {
+		transportType = req.ActionType // Use actionType (e.g., "bicycle") as transportType
+		log.Printf("Using actionType '%s' as transportType", transportType)
+	}
+
 	vehicle, _ := req.Payload["vehicle"].(string)
 
 	transportType = strings.ToLower(strings.ReplaceAll(transportType, "-", "_"))
 
-	points, ghg, isEcoFriendly := CalculateTransportationImpact(distance, fuelConsumption, int(passengers), transportType)
+	// FIX 2: Check if client provided isEcoFriendly in metadata and respect it
+	clientEcoFriendly, hasClientEcoFriendly := req.Metadata["isEcoFriendly"].(bool)
+
+	points, ghg, calculatedEcoFriendly := CalculateTransportationImpact(distance, fuelConsumption, int(passengers), transportType)
+
+	// Use client-provided eco-friendly flag if available, otherwise use calculated value
+	var isEcoFriendly bool
+	if hasClientEcoFriendly {
+		isEcoFriendly = clientEcoFriendly
+		log.Printf("Using client-provided eco-friendly flag: %v", isEcoFriendly)
+	} else {
+		isEcoFriendly = calculatedEcoFriendly
+		log.Printf("Using calculated eco-friendly flag: %v", isEcoFriendly)
+	}
 
 	var userActionsCount int64
 	db.DB.Model(&models.Action{}).Where("user_id = ?", userID).Count(&userActionsCount)
@@ -138,9 +158,6 @@ func UploadTransportationAction(c *gin.Context) {
 		return
 	}
 
-	// Update the user's weekly challenge progress after a transportation action
-	go updateWeeklyChallengeProgress(userID.(uint), "transportation", distance, float64(points), isEcoFriendly)
-
 	// Update user's points and GHG index
 	db.DB.Model(&models.User{}).Where("id = ?", userID).Update("points", gorm.Expr("points + ?", points))
 	db.DB.Model(&models.User{}).Where("id = ?", userID).Update("ghg_index", gorm.Expr("ghg_index + ?", ghg))
@@ -169,6 +186,9 @@ func UploadTransportationAction(c *gin.Context) {
 	}
 	db.DB.Create(&activity)
 
+	// FIX 3: Update weekly challenge progress synchronously first, then check achievements
+	updateWeeklyChallengeProgress(userID.(uint), "transportation", distance, float64(points), isEcoFriendly)
+
 	// Check achievements and challenges asynchronously
 	go checkAchievementsAndChallenges(userID.(uint), "transportation", distance, float64(points), isEcoFriendly)
 
@@ -182,7 +202,6 @@ func UploadTransportationAction(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, response)
 }
-
 func UploadGreenAction(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 
